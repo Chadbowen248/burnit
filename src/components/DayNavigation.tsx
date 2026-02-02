@@ -1,15 +1,6 @@
-// src/components/TrackerApp/DayNavigation.tsx
+// src/components/DayNavigation.tsx
 import { Dispatch, SetStateAction } from "react";
-import { Food } from "./data";
-
-interface DayData {
-  foods: Food[];
-  totals: { calories: number; protein: number };
-}
-
-interface TrackerData {
-  [date: string]: DayData;
-}
+import { TrackerData } from "./types";
 
 interface DayNavigationProps {
   currentDate: string;
@@ -40,8 +31,8 @@ const DayNavigation: React.FC<DayNavigationProps> = ({
   };
 
   return (
-    <div>
-      <h2>
+    <div className="day-navigation">
+      <h2 className="date-display">
         {new Date(selectedDate).toLocaleDateString("en-US", {
           weekday: "long",
           month: "long",
@@ -49,13 +40,13 @@ const DayNavigation: React.FC<DayNavigationProps> = ({
         })}
       </h2>
       <div className="button-group">
-        <button className="button" onClick={() => changeDate(-1)}>
+        <button className="button nav-button" onClick={() => changeDate(-1)}>
           ←
         </button>
-        <button className="button" onClick={() => setSelectedDate(currentDate)}>
+        <button className="button nav-button" onClick={() => setSelectedDate(currentDate)}>
           Today
         </button>
-        <button className="button" onClick={() => changeDate(1)}>
+        <button className="button nav-button" onClick={() => changeDate(1)}>
           →
         </button>
       </div>

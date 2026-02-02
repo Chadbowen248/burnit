@@ -1,19 +1,10 @@
-// src/components/TrackerApp/TrackerApp.tsx
-import { useState, useEffect, Dispatch, SetStateAction } from "react";
+// src/components/TrackerApp.tsx
+import { useState, useEffect } from "react";
 import DayNavigation from "./DayNavigation";
 import FoodAdder from "./FoodAdder";
 import FoodList from "./FoodList";
 import TotalsDisplay from "./TotalsDisplay";
-import { Food } from "./data";
-
-interface DayData {
-  foods: Food[];
-  totals: { calories: number; protein: number };
-}
-
-interface TrackerData {
-  [date: string]: DayData;
-}
+import { Food, TrackerData } from "./types";
 
 const loadFromLocalStorage = (): TrackerData => {
   const savedData = localStorage.getItem("trackerData");
@@ -46,7 +37,29 @@ const TrackerApp: React.FC = () => {
         foods: [],
         totals: { calories: 0, protein: 0 },
       };
-      const newFoods = [...dayData.foods, food];
+      // Add unique instance id for tracking deletions
+      const foodWithInstanceId = { ...food, instanceId: Date.now() };
+      const newFoods = [...dayData.foods, foodWithInstanceId];
+      const newTotals = newFoods.reduce(
+        (acc, f) => ({
+          calories: acc.calories + f.calories,
+          protein: acc.protein + f.protein,
+        }),
+        { calories: 0, protein: 0 }
+      );
+      return {
+        ...prev,
+        [selectedDate]: { foods: newFoods, totals: newTotals },
+      };
+    });
+  };
+
+  const deleteFood = (index: number) => {
+    setTrackerData((prev: TrackerData) => {
+      const dayData = prev[selectedDate];
+      if (!dayData) return prev;
+      
+      const newFoods = dayData.foods.filter((_, i) => i !== index);
       const newTotals = newFoods.reduce(
         (acc, f) => ({
           calories: acc.calories + f.calories,
@@ -63,9 +76,8 @@ const TrackerApp: React.FC = () => {
 
   const resetDay = () => {
     setTrackerData((prev: TrackerData) => ({
-      // Use the setter to update state immutably
-      ...prev, // Spread the existing data to keep other dates unchanged
-      [selectedDate]: { foods: [], totals: { calories: 0, protein: 0 } }, // Overwrite the selected date with empty data
+      ...prev,
+      [selectedDate]: { foods: [], totals: { calories: 0, protein: 0 } },
     }));
   };
 
@@ -85,7 +97,7 @@ const TrackerApp: React.FC = () => {
         setTrackerData={setTrackerData}
       />
       <FoodAdder addFood={addFood} />
-      <FoodList foods={dayData.foods} />
+      <FoodList foods={dayData.foods} onDelete={deleteFood} />
       <TotalsDisplay totals={dayData.totals} onReset={resetDay} />
     </div>
   );
