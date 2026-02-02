@@ -1,3 +1,8 @@
+/* ===== Global Styles ===== */
+* {
+  box-sizing: border-box;
+}
+
 body {
   margin: 0;
   font-family: "Michroma", sans-serif;
@@ -10,7 +15,19 @@ body {
   min-height: 100vh;
   color: #676e95;
   background-color: #292d3e;
-  width: 350px;
+  width: 100%;
+  max-width: 400px;
   margin: 0 auto;
+  padding: 0 10px;
 }
 
+/* ===== Remove spinner from number inputs ===== */
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+input[type="number"] {
+  -moz-appearance: textfield;
+}
