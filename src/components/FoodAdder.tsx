@@ -2,16 +2,28 @@
 import { useState } from "react";
 import { initialFoods } from "./data";
 import { Food } from "./types";
+import FoodSearch from "./FoodSearch";
 
 interface FoodAdderProps {
   addFood: (food: Food) => void;
+  userFavorites: Food[];
+  onSaveToFavorites: (food: Food) => void;
+  onRemoveFavorite: (foodId: number) => void;
 }
 
-const FoodAdder: React.FC<FoodAdderProps> = ({ addFood }) => {
+const FoodAdder: React.FC<FoodAdderProps> = ({ 
+  addFood, 
+  userFavorites, 
+  onSaveToFavorites,
+  onRemoveFavorite 
+}) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [name, setName] = useState("");
   const [calories, setCalories] = useState(0);
   const [protein, setProtein] = useState(0);
+
+  // Combine initial foods with user favorites
+  const allFoods = [...initialFoods, ...userFavorites];
 
   const openModal = () => {
     setName("");
@@ -36,29 +48,76 @@ const FoodAdder: React.FC<FoodAdderProps> = ({ addFood }) => {
     }
   };
 
+  const handleSelectChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const foodId = parseInt(e.target.value, 10);
+    const food = allFoods.find((f) => f.id === foodId);
+    if (food) addFood({ ...food });
+    e.target.value = "";
+  };
+
+  const isUserFavorite = (foodId: number) => {
+    return userFavorites.some((f) => f.id === foodId);
+  };
+
   return (
     <div className="food-adder">
+      {/* USDA Food Search */}
+      <FoodSearch 
+        onAddFood={addFood} 
+        onSaveToFavorites={onSaveToFavorites}
+      />
+
+      {/* Quick select from favorites */}
       <select
         className="custom-select"
-        onChange={(e) => {
-          const food = initialFoods.find(
-            (f) => f.id === parseInt(e.target.value, 10)
-          );
-          if (food) addFood({ ...food });
-          e.target.value = "";
-        }}
+        onChange={handleSelectChange}
       >
-        <option value="">Select a food to add</option>
-        {initialFoods.map((food) => (
-          <option key={food.id} value={food.id}>
-            {food.name} ({food.calories} cal, {food.protein}g protein)
-          </option>
-        ))}
+        <option value="">⭐ Quick add from favorites</option>
+        {userFavorites.length > 0 && (
+          <optgroup label="Your Favorites">
+            {userFavorites.map((food) => (
+              <option key={`fav-${food.id}`} value={food.id}>
+                {food.name} ({food.calories} cal, {food.protein}g)
+              </option>
+            ))}
+          </optgroup>
+        )}
+        <optgroup label="Preset Foods">
+          {initialFoods.map((food) => (
+            <option key={`preset-${food.id}`} value={food.id}>
+              {food.name} ({food.calories} cal, {food.protein}g)
+            </option>
+          ))}
+        </optgroup>
       </select>
 
       <button className="button custom-button" onClick={openModal}>
-        Custom
+        Custom Entry
       </button>
+
+      {/* Show user favorites with remove option */}
+      {userFavorites.length > 0 && (
+        <div className="favorites-list">
+          <div className="favorites-header">
+            <span>Your Favorites</span>
+          </div>
+          {userFavorites.map((food) => (
+            <div key={food.id} className="favorite-item">
+              <span className="favorite-name">{food.name}</span>
+              <span className="favorite-macros">
+                {food.calories} cal, {food.protein}g
+              </span>
+              <button
+                className="remove-favorite-btn"
+                onClick={() => onRemoveFavorite(food.id)}
+                title="Remove from favorites"
+              >
+                ×
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
 
       {isModalOpen && (
         <>
