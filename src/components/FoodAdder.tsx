@@ -20,6 +20,7 @@ const FoodAdder: React.FC<FoodAdderProps> = ({
   const [name, setName] = useState("");
   const [calories, setCalories] = useState(0);
   const [protein, setProtein] = useState(0);
+  const [saveToFavorites, setSaveToFavorites] = useState(false);
 
   // Combine initial foods with user favorites
   const allFoods = [...initialFoods, ...userFavorites];
@@ -28,6 +29,7 @@ const FoodAdder: React.FC<FoodAdderProps> = ({
     setName("");
     setCalories(0);
     setProtein(0);
+    setSaveToFavorites(false);
     setIsModalOpen(true);
   };
 
@@ -43,8 +45,7 @@ const FoodAdder: React.FC<FoodAdderProps> = ({
         protein,
       };
       addFood(newFood);
-      // Offer to save to favorites
-      if (window.confirm(`Save "${name}" to favorites?`)) {
+      if (saveToFavorites) {
         onSaveToFavorites(newFood);
       }
       closeModal();
@@ -152,6 +153,16 @@ const FoodAdder: React.FC<FoodAdderProps> = ({
                   min={0}
                   required
                 />
+              </div>
+              <div className="form-group checkbox-group">
+                <label className="checkbox-label">
+                  <input
+                    type="checkbox"
+                    checked={saveToFavorites}
+                    onChange={(e) => setSaveToFavorites(e.target.checked)}
+                  />
+                  <span>Add to favorites</span>
+                </label>
               </div>
               <div className="modal-button-group">
                 <button className="button" type="submit">
