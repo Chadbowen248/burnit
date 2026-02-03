@@ -569,3 +569,177 @@ progress::-moz-progress-bar {
 .remove-favorite-btn:hover {
   color: var(--accent-red);
 }
+
+/* ===== Food Edit Mode ===== */
+.food-actions {
+  display: flex;
+  gap: var(--spacing-xs);
+}
+
+.edit-button {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  font-size: 1.1rem;
+  cursor: pointer;
+  padding: 0 var(--spacing-xs);
+  line-height: 1;
+  transition: color var(--transition), transform var(--transition);
+}
+
+.edit-button:hover {
+  color: var(--accent-cyan);
+  transform: scale(1.2);
+}
+
+.food-edit-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+  width: 100%;
+}
+
+.edit-input {
+  padding: var(--spacing-xs) var(--spacing-sm);
+  background-color: var(--bg-elevated);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-sm);
+  color: var(--text-primary);
+  font-size: 0.9rem;
+  font-family: "Michroma", sans-serif;
+}
+
+.edit-input:focus {
+  border-color: var(--accent-cyan);
+  outline: none;
+}
+
+.edit-name {
+  width: 100%;
+}
+
+.edit-numbers {
+  display: flex;
+  gap: var(--spacing-xs);
+}
+
+.edit-number {
+  flex: 1;
+  width: 50%;
+}
+
+.edit-buttons {
+  display: flex;
+  gap: var(--spacing-xs);
+  justify-content: flex-end;
+}
+
+.save-button,
+.cancel-button {
+  background: transparent;
+  border: none;
+  font-size: 1.2rem;
+  cursor: pointer;
+  padding: var(--spacing-xs);
+  transition: color var(--transition), transform var(--transition);
+}
+
+.save-button {
+  color: var(--accent-green);
+}
+
+.save-button:hover {
+  transform: scale(1.2);
+}
+
+.cancel-button {
+  color: var(--accent-red);
+}
+
+.cancel-button:hover {
+  transform: scale(1.2);
+}
+
+/* ===== Goals Settings Modal ===== */
+.modal-content {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: var(--bg-primary);
+  padding: var(--spacing-lg);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius);
+  width: 280px;
+  max-width: 90vw;
+  z-index: 1000;
+}
+
+.modal-content h3 {
+  color: var(--text-primary);
+  margin: 0 0 var(--spacing-md) 0;
+  font-size: 1.1rem;
+}
+
+.goals-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.goals-form label {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+  text-align: left;
+}
+
+.goals-form input {
+  padding: var(--spacing-sm);
+  background-color: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-sm);
+  color: var(--text-primary);
+  font-size: 1rem;
+  font-family: "Michroma", sans-serif;
+}
+
+.goals-form input:focus {
+  border-color: var(--accent-cyan);
+  outline: none;
+}
+
+.modal-buttons {
+  display: flex;
+  gap: var(--spacing-sm);
+  margin-top: var(--spacing-lg);
+}
+
+.modal-buttons .button {
+  flex: 1;
+}
+
+.button.secondary {
+  color: var(--text-secondary);
+}
+
+.button.secondary:hover {
+  color: var(--text-primary);
+}
+
+/* ===== Totals Buttons ===== */
+.totals-buttons {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: var(--spacing-sm);
+  margin-top: var(--spacing-lg);
+}
+
+.icon-button {
+  min-width: auto;
+  padding: var(--spacing-xs) var(--spacing-sm);
+  font-size: 1.1rem;
+}

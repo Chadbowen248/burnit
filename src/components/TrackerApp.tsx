@@ -4,10 +4,13 @@ import DayNavigation from "./DayNavigation";
 import FoodAdder from "./FoodAdder";
 import FoodList from "./FoodList";
 import TotalsDisplay from "./TotalsDisplay";
-import { Food, TrackerData } from "./types";
+import GoalsSettings from "./GoalsSettings";
+import { Food, Goals, TrackerData } from "./types";
+import { goals as defaultGoals } from "./data";
 
 const TRACKER_DATA_KEY = "trackerData";
 const USER_FAVORITES_KEY = "userFavorites";
+const USER_GOALS_KEY = "userGoals";
 
 const loadFromLocalStorage = (): TrackerData => {
   const savedData = localStorage.getItem(TRACKER_DATA_KEY);
@@ -19,13 +22,20 @@ const loadFavorites = (): Food[] => {
   return savedFavorites ? JSON.parse(savedFavorites) : [];
 };
 
+const loadGoals = (): Goals => {
+  const savedGoals = localStorage.getItem(USER_GOALS_KEY);
+  return savedGoals ? JSON.parse(savedGoals) : defaultGoals;
+};
+
 const TrackerApp: React.FC = () => {
   const [trackerData, setTrackerData] = useState<TrackerData>(
     loadFromLocalStorage()
   );
   const [userFavorites, setUserFavorites] = useState<Food[]>(loadFavorites());
+  const [goals, setGoals] = useState<Goals>(loadGoals());
   const [currentDate] = useState<string>(new Date().toLocaleDateString());
   const [selectedDate, setSelectedDate] = useState<string>(currentDate);
+  const [showGoalsSettings, setShowGoalsSettings] = useState(false);
 
   // Persist tracker data
   useEffect(() => {
@@ -36,6 +46,11 @@ const TrackerApp: React.FC = () => {
   useEffect(() => {
     localStorage.setItem(USER_FAVORITES_KEY, JSON.stringify(userFavorites));
   }, [userFavorites]);
+
+  // Persist goals
+  useEffect(() => {
+    localStorage.setItem(USER_GOALS_KEY, JSON.stringify(goals));
+  }, [goals]);
 
   // Initialize current date if needed
   useEffect(() => {
@@ -55,6 +70,28 @@ const TrackerApp: React.FC = () => {
       };
       const foodWithInstanceId = { ...food, instanceId: Date.now() };
       const newFoods = [...dayData.foods, foodWithInstanceId];
+      const newTotals = newFoods.reduce(
+        (acc, f) => ({
+          calories: acc.calories + f.calories,
+          protein: acc.protein + f.protein,
+        }),
+        { calories: 0, protein: 0 }
+      );
+      return {
+        ...prev,
+        [selectedDate]: { foods: newFoods, totals: newTotals },
+      };
+    });
+  };
+
+  const editFood = (index: number, updatedFood: Food) => {
+    setTrackerData((prev: TrackerData) => {
+      const dayData = prev[selectedDate];
+      if (!dayData) return prev;
+
+      const newFoods = dayData.foods.map((f, i) =>
+        i === index ? { ...updatedFood, instanceId: (f as any).instanceId } : f
+      );
       const newTotals = newFoods.reduce(
         (acc, f) => ({
           calories: acc.calories + f.calories,
@@ -97,7 +134,6 @@ const TrackerApp: React.FC = () => {
   };
 
   const saveToFavorites = (food: Food) => {
-    // Check if already exists (by name, case-insensitive)
     const exists = userFavorites.some(
       (f) => f.name.toLowerCase() === food.name.toLowerCase()
     );
@@ -131,8 +167,25 @@ const TrackerApp: React.FC = () => {
         onSaveToFavorites={saveToFavorites}
         onRemoveFavorite={removeFavorite}
       />
-      <FoodList foods={dayData.foods} onDelete={deleteFood} />
-      <TotalsDisplay totals={dayData.totals} onReset={resetDay} />
+      <FoodList
+        foods={dayData.foods}
+        onDelete={deleteFood}
+        onEdit={editFood}
+      />
+      <TotalsDisplay
+        totals={dayData.totals}
+        goals={goals}
+        onReset={resetDay}
+        onEditGoals={() => setShowGoalsSettings(true)}
+      />
+
+      {showGoalsSettings && (
+        <GoalsSettings
+          goals={goals}
+          onSave={setGoals}
+          onClose={() => setShowGoalsSettings(false)}
+        />
+      )}
     </div>
   );
 };

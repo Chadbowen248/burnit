@@ -2,7 +2,6 @@
 import { useState } from "react";
 import { initialFoods } from "./data";
 import { Food } from "./types";
-import FoodSearch from "./FoodSearch";
 
 interface FoodAdderProps {
   addFood: (food: Food) => void;
@@ -44,6 +43,10 @@ const FoodAdder: React.FC<FoodAdderProps> = ({
         protein,
       };
       addFood(newFood);
+      // Offer to save to favorites
+      if (window.confirm(`Save "${name}" to favorites?`)) {
+        onSaveToFavorites(newFood);
+      }
       closeModal();
     }
   };
@@ -55,24 +58,14 @@ const FoodAdder: React.FC<FoodAdderProps> = ({
     e.target.value = "";
   };
 
-  const isUserFavorite = (foodId: number) => {
-    return userFavorites.some((f) => f.id === foodId);
-  };
-
   return (
     <div className="food-adder">
-      {/* USDA Food Search */}
-      <FoodSearch 
-        onAddFood={addFood} 
-        onSaveToFavorites={onSaveToFavorites}
-      />
-
-      {/* Quick select from favorites */}
+      {/* Quick select from favorites/presets */}
       <select
         className="custom-select"
         onChange={handleSelectChange}
       >
-        <option value="">⭐ Quick add from favorites</option>
+        <option value="">⭐ Quick add from list</option>
         {userFavorites.length > 0 && (
           <optgroup label="Your Favorites">
             {userFavorites.map((food) => (
@@ -92,7 +85,7 @@ const FoodAdder: React.FC<FoodAdderProps> = ({
       </select>
 
       <button className="button custom-button" onClick={openModal}>
-        Custom Entry
+        + Custom Entry
       </button>
 
       {/* Show user favorites with remove option */}
