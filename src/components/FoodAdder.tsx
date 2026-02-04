@@ -17,13 +17,17 @@ const FoodAdder: React.FC<FoodAdderProps> = ({
   onRemoveFavorite 
 }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isManageOpen, setIsManageOpen] = useState(false);
   const [name, setName] = useState("");
   const [calories, setCalories] = useState(0);
   const [protein, setProtein] = useState(0);
   const [saveToFavorites, setSaveToFavorites] = useState(false);
 
-  // Combine initial foods with user favorites
-  const allFoods = [...initialFoods, ...userFavorites];
+  // Combine preset foods with user favorites into one list
+  const allFoods = [
+    ...userFavorites.map(f => ({ ...f, isUserAdded: true })),
+    ...initialFoods.map(f => ({ ...f, isUserAdded: false }))
+  ].sort((a, b) => a.name.localeCompare(b.name));
 
   const openModal = () => {
     setName("");
@@ -61,58 +65,68 @@ const FoodAdder: React.FC<FoodAdderProps> = ({
 
   return (
     <div className="food-adder">
-      {/* Quick select from favorites/presets */}
+      {/* Quick select - single merged list */}
       <select
         className="custom-select"
         onChange={handleSelectChange}
       >
         <option value="">⭐ Quick add from list</option>
-        {userFavorites.length > 0 && (
-          <optgroup label="Your Favorites">
-            {userFavorites.map((food) => (
-              <option key={`fav-${food.id}`} value={food.id}>
-                {food.name} ({food.calories} cal, {food.protein}g)
-              </option>
-            ))}
-          </optgroup>
-        )}
-        <optgroup label="Preset Foods">
-          {initialFoods.map((food) => (
-            <option key={`preset-${food.id}`} value={food.id}>
-              {food.name} ({food.calories} cal, {food.protein}g)
-            </option>
-          ))}
-        </optgroup>
+        {allFoods.map((food) => (
+          <option key={food.id} value={food.id}>
+            {food.name} ({food.calories} cal, {food.protein}g)
+          </option>
+        ))}
       </select>
 
-      <button className="button custom-button" onClick={openModal}>
-        + Custom Entry
-      </button>
+      <div className="food-adder-buttons">
+        <button className="button custom-button" onClick={openModal}>
+          + Custom Entry
+        </button>
+        {userFavorites.length > 0 && (
+          <button 
+            className="button manage-button" 
+            onClick={() => setIsManageOpen(true)}
+            title="Manage your added foods"
+          >
+            ✎
+          </button>
+        )}
+      </div>
 
-      {/* Show user favorites with remove option */}
-      {userFavorites.length > 0 && (
-        <div className="favorites-list">
-          <div className="favorites-header">
-            <span>Your Favorites</span>
-          </div>
-          {userFavorites.map((food) => (
-            <div key={food.id} className="favorite-item">
-              <span className="favorite-name">{food.name}</span>
-              <span className="favorite-macros">
-                {food.calories} cal, {food.protein}g
-              </span>
-              <button
-                className="remove-favorite-btn"
-                onClick={() => onRemoveFavorite(food.id)}
-                title="Remove from favorites"
-              >
-                ×
+      {/* Manage user-added foods modal */}
+      {isManageOpen && (
+        <>
+          <div className="modal-overlay" onClick={() => setIsManageOpen(false)} />
+          <div className="modal">
+            <h3>Your Added Foods</h3>
+            <p className="modal-subtitle">Remove items you no longer need</p>
+            <div className="manage-list">
+              {userFavorites.map((food) => (
+                <div key={food.id} className="manage-item">
+                  <span className="manage-name">{food.name}</span>
+                  <span className="manage-macros">
+                    {food.calories} cal, {food.protein}g
+                  </span>
+                  <button
+                    className="remove-btn"
+                    onClick={() => onRemoveFavorite(food.id)}
+                    title="Remove"
+                  >
+                    ×
+                  </button>
+                </div>
+              ))}
+            </div>
+            <div className="modal-button-group">
+              <button className="button" onClick={() => setIsManageOpen(false)}>
+                Done
               </button>
             </div>
-          ))}
-        </div>
+          </div>
+        </>
       )}
 
+      {/* Add custom food modal */}
       {isModalOpen && (
         <>
           <div className="modal-overlay" onClick={closeModal} />
@@ -161,7 +175,7 @@ const FoodAdder: React.FC<FoodAdderProps> = ({
                     checked={saveToFavorites}
                     onChange={(e) => setSaveToFavorites(e.target.checked)}
                   />
-                  <span>Add to favorites</span>
+                  <span>Save to quick-add list</span>
                 </label>
               </div>
               <div className="modal-button-group">
