@@ -1,0 +1,23 @@
+[build]
+  publish = "build"
+  functions = "netlify/functions"
+
+[[redirects]]
+  from = "/api/*"
+  to = "/.netlify/functions/api/:splat"
+  status = 200
+
+[dev]
+  command = "npm start"
+  port = 3001
+  publish = "build"
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    cache-control = "public, max-age=3600"
+    
+[[headers]]
+  for = "/api/*"
+  [headers.values]
+    cache-control = "no-cache"
