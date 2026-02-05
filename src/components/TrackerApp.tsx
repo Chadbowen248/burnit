@@ -9,12 +9,6 @@ import { Food, Goals, TrackerData, DailySummary } from "./types";
 import { goals as defaultGoals } from "./data";
 import FoodAPI from "../api/api";
 
-// Fallback to localStorage for development/offline mode
-const TRACKER_DATA_KEY = "trackerData";
-const USER_FAVORITES_KEY = "userFavorites";
-const USER_GOALS_KEY = "userGoals";
-const USE_API_KEY = "useAPI";
-
 const formatDateForAPI = (date: string): string => {
   // Convert from locale date string to YYYY-MM-DD format
   const d = new Date(date);
@@ -29,21 +23,12 @@ const TrackerApp: React.FC = () => {
   const [selectedDate, setSelectedDate] = useState<string>(currentDate);
   const [showGoalsSettings, setShowGoalsSettings] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [useAPI, setUseAPI] = useState(true); // Try API first, fall back to localStorage
+  const [initialLoading, setInitialLoading] = useState(true); // New: Track initial data load
   const [error, setError] = useState<string | null>(null);
 
   // Load data for a specific date
   const loadDateData = useCallback(async (date: string) => {
-    if (!useAPI) {
-      // Fallback to localStorage
-      const savedData = localStorage.getItem(TRACKER_DATA_KEY);
-      const data = savedData ? JSON.parse(savedData) : {};
-      setTrackerData(prev => ({ ...prev, [date]: data[date] || { foods: [], totals: { calories: 0, protein: 0 } } }));
-      return;
-    }
-
     try {
-      setLoading(true);
       setError(null);
       const apiDate = formatDateForAPI(date);
       
@@ -68,94 +53,64 @@ const TrackerApp: React.FC = () => {
 
     } catch (err: any) {
       console.error('Failed to load data for date:', date, err);
+      setError(`Failed to load data: ${err.message}. Please check your internet connection.`);
       
-      // Fall back to localStorage if API fails
-      if (useAPI) {
-        console.log('API failed, falling back to localStorage...');
-        setUseAPI(false);
-        localStorage.setItem(USE_API_KEY, 'false');
-        
-        // Load from localStorage immediately
-        const savedData = localStorage.getItem(TRACKER_DATA_KEY);
-        const data = savedData ? JSON.parse(savedData) : {};
-        setTrackerData(prev => ({ 
-          ...prev, 
-          [date]: data[date] || { foods: [], totals: { calories: 0, protein: 0 } } 
-        }));
-        
-        setError(`API unavailable - using offline mode`);
-      } else {
-        setError(`Failed to load data: ${err.message}`);
-      }
-    } finally {
-      setLoading(false);
+      // Set empty data instead of crashing
+      setTrackerData(prev => ({
+        ...prev,
+        [date]: { foods: [], totals: { calories: 0, protein: 0, carbs: 0, fat: 0 } }
+      }));
     }
-  }, [useAPI]);
+  }, []);
 
   // Load goals for a date
   const loadGoals = useCallback(async (date: string) => {
-    if (!useAPI) {
-      const savedGoals = localStorage.getItem(USER_GOALS_KEY);
-      setGoals(savedGoals ? JSON.parse(savedGoals) : defaultGoals);
-      return;
-    }
-
     try {
       const apiDate = formatDateForAPI(date);
       const goalsData = await FoodAPI.getGoals(apiDate);
       setGoals(goalsData);
     } catch (err: any) {
       console.error('Failed to load goals:', err);
-      // Use default goals on error
+      // Use default goals on error, but don't show error to user for goals
       setGoals(defaultGoals);
     }
-  }, [useAPI]);
+  }, []);
 
   // Load favorites
   const loadFavorites = useCallback(async () => {
-    if (!useAPI) {
-      const savedFavorites = localStorage.getItem(USER_FAVORITES_KEY);
-      setUserFavorites(savedFavorites ? JSON.parse(savedFavorites) : []);
-      return;
-    }
-
     try {
       const favorites = await FoodAPI.getFavorites();
       setUserFavorites(favorites);
     } catch (err: any) {
       console.error('Failed to load favorites:', err);
-      // Fall back to localStorage favorites
-      const savedFavorites = localStorage.getItem(USER_FAVORITES_KEY);
-      setUserFavorites(savedFavorites ? JSON.parse(savedFavorites) : []);
-    }
-  }, [useAPI]);
-
-  // Initialize data on mount and date change
-  useEffect(() => {
-    // Check if we should use API
-    const savedUseAPI = localStorage.getItem(USE_API_KEY);
-    if (savedUseAPI === 'false') {
-      setUseAPI(false);
+      setUserFavorites([]);
+      // Don't show error for favorites as it's not critical
     }
   }, []);
 
+  // Initialize data on mount and date change
   useEffect(() => {
-    loadDateData(selectedDate);
-    loadGoals(selectedDate);
-  }, [selectedDate, loadDateData, loadGoals]);
+    const initializeData = async () => {
+      setInitialLoading(true);
+      setLoading(true);
+      
+      try {
+        // Load all data in parallel
+        await Promise.all([
+          loadDateData(selectedDate),
+          loadGoals(selectedDate),
+          loadFavorites()
+        ]);
+      } catch (err) {
+        console.error('Failed to initialize data:', err);
+      } finally {
+        setInitialLoading(false);
+        setLoading(false);
+      }
+    };
 
-  useEffect(() => {
-    loadFavorites();
-  }, [loadFavorites]);
-
-  // Persist to localStorage as backup (even when using API)
-  useEffect(() => {
-    localStorage.setItem(TRACKER_DATA_KEY, JSON.stringify(trackerData));
-  }, [trackerData]);
-
-  useEffect(() => {
-    localStorage.setItem(USER_FAVORITES_KEY, JSON.stringify(userFavorites));
-  }, [userFavorites]);
+    initializeData();
+  }, [selectedDate, loadDateData, loadGoals, loadFavorites]);
 
   const addFood = async (food: Food) => {
     try {
@@ -168,44 +123,27 @@ const TrackerApp: React.FC = () => {
         meal_type: food.meal_type || 'snack'
       };
 
-      if (useAPI) {
-        // Save to API
-        const savedFood = await FoodAPI.addFood(foodWithDate);
-        
-        // Update local state
-        setTrackerData(prev => {
-          const dayData = prev[selectedDate] || { foods: [], totals: { calories: 0, protein: 0 } };
-          const newFoods = [...dayData.foods, savedFood];
-          const newTotals = newFoods.reduce(
-            (acc, f) => ({
-              calories: acc.calories + (f.calories || 0),
-              protein: acc.protein + (f.protein || 0),
-              carbs: (acc.carbs || 0) + (f.carbs || 0),
-              fat: (acc.fat || 0) + (f.fat || 0),
-            }),
-            { calories: 0, protein: 0, carbs: 0, fat: 0 }
-          );
-          return { ...prev, [selectedDate]: { foods: newFoods, totals: newTotals } };
-        });
-      } else {
-        // Save to localStorage
-        const foodWithInstanceId = { ...food, instanceId: Date.now() };
-        setTrackerData(prev => {
-          const dayData = prev[selectedDate] || { foods: [], totals: { calories: 0, protein: 0 } };
-          const newFoods = [...dayData.foods, foodWithInstanceId];
-          const newTotals = newFoods.reduce(
-            (acc, f) => ({
-              calories: acc.calories + f.calories,
-              protein: acc.protein + f.protein,
-            }),
-            { calories: 0, protein: 0 }
-          );
-          return { ...prev, [selectedDate]: { foods: newFoods, totals: newTotals } };
-        });
-      }
+      // Always save to API - no localStorage fallback
+      const savedFood = await FoodAPI.addFood(foodWithDate);
+      
+      // Update local state immediately
+      setTrackerData(prev => {
+        const dayData = prev[selectedDate] || { foods: [], totals: { calories: 0, protein: 0, carbs: 0, fat: 0 } };
+        const newFoods = [...dayData.foods, savedFood];
+        const newTotals = newFoods.reduce(
+          (acc, f) => ({
+            calories: acc.calories + (f.calories || 0),
+            protein: acc.protein + (f.protein || 0),
+            carbs: (acc.carbs || 0) + (f.carbs || 0),
+            fat: (acc.fat || 0) + (f.fat || 0),
+          }),
+          { calories: 0, protein: 0, carbs: 0, fat: 0 }
+        );
+        return { ...prev, [selectedDate]: { foods: newFoods, totals: newTotals } };
+      });
     } catch (err: any) {
       console.error('Failed to add food:', err);
-      setError(`Failed to add food: ${err.message}`);
+      setError(`Failed to add food: ${err.message}. Please check your internet connection and try again.`);
     } finally {
       setLoading(false);
     }
@@ -217,12 +155,10 @@ const TrackerApp: React.FC = () => {
       setError(null);
 
       const dayData = trackerData[selectedDate];
-      if (!dayData) return;
+      if (!dayData || !updatedFood.id) return;
 
-      if (useAPI && updatedFood.id) {
-        // Update via API
-        await FoodAPI.updateFood(updatedFood.id, updatedFood);
-      }
+      // Always update via API
+      await FoodAPI.updateFood(updatedFood.id, updatedFood);
 
       // Update local state
       setTrackerData(prev => {
@@ -261,8 +197,8 @@ const TrackerApp: React.FC = () => {
 
       const food = dayData.foods[index];
       
-      if (useAPI && food.id) {
-        // Delete from API
+      if (food.id) {
+        // Always delete from API
         await FoodAPI.deleteFood(food.id);
       }
 
@@ -299,12 +235,10 @@ const TrackerApp: React.FC = () => {
       const dayData = trackerData[selectedDate];
       if (!dayData) return;
 
-      if (useAPI) {
-        // Delete all foods for this date
-        for (const food of dayData.foods) {
-          if (food.id) {
-            await FoodAPI.deleteFood(food.id);
-          }
+      // Delete all foods for this date via API
+      for (const food of dayData.foods) {
+        if (food.id) {
+          await FoodAPI.deleteFood(food.id);
         }
       }
 
@@ -328,15 +262,10 @@ const TrackerApp: React.FC = () => {
       );
       if (exists) return;
 
-      if (useAPI) {
-        // Save as favorite via API
-        const favoriteFood = { ...food, is_favorite: true, date: formatDateForAPI(selectedDate) };
-        const saved = await FoodAPI.addFood(favoriteFood);
-        setUserFavorites(prev => [...prev, saved]);
-      } else {
-        // Save to localStorage
-        setUserFavorites(prev => [...prev, food]);
-      }
+      // Always save via API
+      const favoriteFood = { ...food, is_favorite: true, date: formatDateForAPI(selectedDate) };
+      const saved = await FoodAPI.addFood(favoriteFood);
+      setUserFavorites(prev => [...prev, saved]);
     } catch (err: any) {
       console.error('Failed to save favorite:', err);
       setError(`Failed to save favorite: ${err.message}`);
@@ -345,10 +274,8 @@ const TrackerApp: React.FC = () => {
 
   const removeFavorite = async (foodId: number) => {
     try {
-      if (useAPI) {
-        await FoodAPI.deleteFood(foodId);
-      }
-      
+      // Always delete via API
+      await FoodAPI.deleteFood(foodId);
       setUserFavorites(prev => prev.filter(f => f.id !== foodId));
     } catch (err: any) {
       console.error('Failed to remove favorite:', err);
@@ -363,20 +290,35 @@ const TrackerApp: React.FC = () => {
 
       const goalsWithDate = { ...newGoals, date: formatDateForAPI(selectedDate) };
 
-      if (useAPI) {
-        await FoodAPI.setGoals(goalsWithDate);
-      } else {
-        localStorage.setItem(USER_GOALS_KEY, JSON.stringify(newGoals));
-      }
-      
+      // Always save via API - no localStorage fallback
+      await FoodAPI.setGoals(goalsWithDate);
       setGoals(newGoals);
     } catch (err: any) {
       console.error('Failed to update goals:', err);
-      setError(`Failed to update goals: ${err.message}`);
+      setError(`Failed to update goals: ${err.message}. Please try again.`);
     } finally {
       setLoading(false);
     }
   };
+
+  // Show loading screen until initial data is loaded
+  if (initialLoading) {
+    return (
+      <div className="container">
+        <h1>Unfuck Yourself</h1>
+        <div style={{ 
+          background: '#e3f2fd', 
+          color: '#1565c0', 
+          padding: '20px', 
+          borderRadius: '4px', 
+          textAlign: 'center',
+          fontSize: '16px' 
+        }}>
+          Loading your data...
+        </div>
+      </div>
+    );
+  }
 
   const dayData = trackerData[selectedDate] || {
     foods: [],
@@ -396,7 +338,7 @@ const TrackerApp: React.FC = () => {
           marginBottom: '10px',
           fontSize: '14px' 
         }}>
-          {error} {!useAPI && "(Using offline mode)"}
+          {error}
           <button 
             onClick={() => setError(null)}
             style={{ float: 'right', background: 'none', border: 'none', fontSize: '16px', cursor: 'pointer' }}
@@ -406,7 +348,7 @@ const TrackerApp: React.FC = () => {
         </div>
       )}
 
-      {loading && (
+      {loading && !initialLoading && (
         <div style={{ 
           background: '#e3f2fd', 
           color: '#1565c0', 
@@ -415,7 +357,7 @@ const TrackerApp: React.FC = () => {
           marginBottom: '10px',
           fontSize: '14px' 
         }}>
-          Loading...
+          Saving...
         </div>
       )}
 
@@ -456,30 +398,6 @@ const TrackerApp: React.FC = () => {
           }}
           onClose={() => setShowGoalsSettings(false)}
         />
-      )}
-
-      {!useAPI && (
-        <div style={{ 
-          background: '#fff3e0', 
-          color: '#ef6c00', 
-          padding: '10px', 
-          borderRadius: '4px', 
-          marginTop: '10px',
-          fontSize: '12px',
-          textAlign: 'center' 
-        }}>
-          Offline Mode - Changes saved locally only
-          <button 
-            onClick={() => {
-              setUseAPI(true);
-              localStorage.setItem(USE_API_KEY, 'true');
-              loadDateData(selectedDate);
-            }}
-            style={{ marginLeft: '10px', fontSize: '12px' }}
-          >
-            Retry API
-          </button>
-        </div>
       )}
     </div>
   );
