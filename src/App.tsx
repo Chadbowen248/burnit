@@ -96,7 +96,7 @@ function App() {
     if (!food.id) return;
     try {
       const api = await import('./api/api');
-      await api.default.updateFood(food.id, food));
+      await api.default.updateFood(food.id, food);
       loadFoods();
       loadSummary();
     } catch (error) {
