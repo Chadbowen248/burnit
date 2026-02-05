@@ -20,7 +20,8 @@ const DayNavigation: React.FC<DayNavigationProps> = ({
   const changeDate = (direction: number) => {
     const dateObj = new Date(selectedDate);
     dateObj.setDate(dateObj.getDate() + direction);
-    const newDate = dateObj.toLocaleDateString();
+    // Use consistent YYYY-MM-DD format instead of toLocaleDateString()
+    const newDate = dateObj.toISOString().split('T')[0];
     setSelectedDate(newDate);
     if (!trackerData[newDate]) {
       setTrackerData((prev) => ({

@@ -10,9 +10,17 @@ import { goals as defaultGoals } from "./data";
 import FoodAPI from "../api/api";
 
 const formatDateForAPI = (date: string): string => {
-  // Convert from locale date string to YYYY-MM-DD format
+  // If already in YYYY-MM-DD format, return as-is
+  if (date.match(/^\d{4}-\d{2}-\d{2}$/)) {
+    console.log(`formatDateForAPI: "${date}" already in YYYY-MM-DD format`);
+    return date;
+  }
+  
+  // Convert from other date string formats to YYYY-MM-DD format
   const d = new Date(date);
-  return d.toISOString().split('T')[0];
+  const formatted = d.toISOString().split('T')[0];
+  console.log(`formatDateForAPI: "${date}" -> "${formatted}"`);
+  return formatted;
 };
 
 const TrackerApp: React.FC = () => {
@@ -29,7 +37,12 @@ const TrackerApp: React.FC = () => {
   const [trackerData, setTrackerData] = useState<TrackerData>({});
   const [userFavorites, setUserFavorites] = useState<Food[]>([]);
   const [goals, setGoals] = useState<Goals>(defaultGoals);
-  const [currentDate] = useState<string>(new Date().toLocaleDateString());
+  const [currentDate] = useState<string>(() => {
+    // Use consistent YYYY-MM-DD format everywhere instead of locale-dependent toLocaleDateString()
+    const today = new Date().toISOString().split('T')[0];
+    console.log('Current date (fixed YYYY-MM-DD format):', today);
+    return today;
+  });
   const [selectedDate, setSelectedDate] = useState<string>(currentDate);
   const [showGoalsSettings, setShowGoalsSettings] = useState(false);
   const [loading, setLoading] = useState(false);
