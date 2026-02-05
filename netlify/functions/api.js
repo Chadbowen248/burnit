@@ -142,7 +142,7 @@ exports.handler = async (event, context) => {
           };
         } else {
           // Get all foods with optional filters
-          const { date, meal_type } = queryStringParameters || {};
+          const { date, meal_type, is_favorite } = queryStringParameters || {};
           let query = 'SELECT * FROM foods WHERE 1=1';
           const params = [];
           
@@ -154,6 +154,11 @@ exports.handler = async (event, context) => {
           if (meal_type) {
             query += ' AND meal_type = ?';
             params.push(meal_type);
+          }
+          
+          if (is_favorite !== undefined) {
+            query += ' AND is_favorite = ?';
+            params.push(is_favorite === 'true' ? 1 : 0);
           }
           
           query += ' ORDER BY created_at DESC';

@@ -68,14 +68,24 @@ const TrackerApp: React.FC = () => {
 
     } catch (err: any) {
       console.error('Failed to load data for date:', date, err);
-      setError(`Failed to load data: ${err.message}`);
       
       // Fall back to localStorage if API fails
       if (useAPI) {
-        console.log('Falling back to localStorage...');
+        console.log('API failed, falling back to localStorage...');
         setUseAPI(false);
         localStorage.setItem(USE_API_KEY, 'false');
-        loadDateData(date); // Retry with localStorage
+        
+        // Load from localStorage immediately
+        const savedData = localStorage.getItem(TRACKER_DATA_KEY);
+        const data = savedData ? JSON.parse(savedData) : {};
+        setTrackerData(prev => ({ 
+          ...prev, 
+          [date]: data[date] || { foods: [], totals: { calories: 0, protein: 0 } } 
+        }));
+        
+        setError(`API unavailable - using offline mode`);
+      } else {
+        setError(`Failed to load data: ${err.message}`);
       }
     } finally {
       setLoading(false);
@@ -114,7 +124,9 @@ const TrackerApp: React.FC = () => {
       setUserFavorites(favorites);
     } catch (err: any) {
       console.error('Failed to load favorites:', err);
-      setUserFavorites([]);
+      // Fall back to localStorage favorites
+      const savedFavorites = localStorage.getItem(USER_FAVORITES_KEY);
+      setUserFavorites(savedFavorites ? JSON.parse(savedFavorites) : []);
     }
   }, [useAPI]);
 

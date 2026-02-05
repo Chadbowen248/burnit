@@ -54,7 +54,7 @@ app.get('/api/health', (req, res) => {
 
 // Get all foods with optional date filter
 app.get('/api/foods', (req, res) => {
-  const { date, meal_type } = req.query;
+  const { date, meal_type, is_favorite } = req.query;
   let query = 'SELECT * FROM foods WHERE 1=1';
   const params = [];
   
@@ -66,6 +66,11 @@ app.get('/api/foods', (req, res) => {
   if (meal_type) {
     query += ' AND meal_type = ?';
     params.push(meal_type);
+  }
+  
+  if (is_favorite !== undefined) {
+    query += ' AND is_favorite = ?';
+    params.push(is_favorite === 'true' ? 1 : 0);
   }
   
   query += ' ORDER BY created_at DESC';
