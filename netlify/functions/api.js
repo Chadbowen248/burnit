@@ -293,7 +293,7 @@ exports.handler = async (event, context) => {
         if (id) {
           // Get goals for specific date
           const rows = await runQuery('SELECT * FROM daily_goals WHERE date = ?', [id]);
-          const goals = rows[0] || { calories: 2000, protein: 50, carbs: 250, fat: 65 };
+          const goals = rows[0] || { calories: 2000, protein: 200, carbs: 250, fat: 65 };
           return {
             statusCode: 200,
             headers,

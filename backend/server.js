@@ -213,7 +213,7 @@ app.get('/api/goals/:date', (req, res) => {
     if (err) {
       res.status(500).json({ error: err.message });
     } else {
-      res.json(row || { calories: 2000, protein: 50, carbs: 250, fat: 65 });
+      res.json(row || { calories: 2000, protein: 200, carbs: 250, fat: 65 });
     }
   });
 });

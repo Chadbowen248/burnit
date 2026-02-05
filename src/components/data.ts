@@ -20,7 +20,7 @@ export const initialFoods: Food[] = [
   { id: 14, name: "chicken Meatballs", calories: 160, protein: 17 },
 ];
 
-export const goals: Goals = { calories: 2000, protein: 175 };
+export const goals: Goals = { calories: 2000, protein: 200 };
 
 // Re-export types for convenience
 export type { Food, Goals } from "./types";
