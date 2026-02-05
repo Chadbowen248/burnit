@@ -43,7 +43,9 @@ const TrackerApp: React.FC = () => {
       const apiDate = formatDateForAPI(date);
       
       // Load foods for the date
+      console.log('Loading foods for date:', apiDate);
       const foods = await FoodAPI.getFoods(apiDate);
+      console.log('Loaded foods from API:', foods);
       
       // Calculate totals
       const totals = foods.reduce(
@@ -134,12 +136,15 @@ const TrackerApp: React.FC = () => {
       };
 
       // Always save to API - no localStorage fallback
+      console.log('Saving food to API:', foodWithDate);
       const savedFood = await FoodAPI.addFood(foodWithDate);
+      console.log('Food saved successfully:', savedFood);
       
       // Update local state immediately
       setTrackerData(prev => {
         const dayData = prev[selectedDate] || { foods: [], totals: { calories: 0, protein: 0, carbs: 0, fat: 0 } };
         const newFoods = [...dayData.foods, savedFood];
+        console.log('Updated foods list:', newFoods);
         const newTotals = newFoods.reduce(
           (acc, f) => ({
             calories: acc.calories + (f.calories || 0),
@@ -153,7 +158,8 @@ const TrackerApp: React.FC = () => {
       });
     } catch (err: any) {
       console.error('Failed to add food:', err);
-      setError(`Failed to add food: ${err.message}. Please check your internet connection and try again.`);
+      console.error('Error details:', err.response?.data || err.response || err);
+      setError(`Failed to add food: ${err.message}. Please check your internet connection and try again. Check console for details.`);
     } finally {
       setLoading(false);
     }
