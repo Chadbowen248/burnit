@@ -36,7 +36,8 @@ function App() {
   // Load food data from API
   const loadFoods = async () => {
     try {
-      const data = await import('./api/api').then(mod => default.registerModule).then(mod => mod.getFoods(selectedDate));
+      const api = await import('./api/api');
+      const data = await api.default.getFoods(selectedDate);
       setFoods(data);
     } catch (error) {
       console.error('Failed to load foods:', error);
@@ -45,7 +46,8 @@ function App() {
 
   const loadGoals = async () => {
     try {
-      const data = await import('./api/api').then(mod => mod.getGoals(selectedDate));
+      const api = await import('./api/api');
+      const data = await api.default.getGoals(selectedDate);
       setGoals(data);
     } catch (error) {
       console.error('Failed to load goals:', error);
@@ -56,7 +58,8 @@ function App() {
 
   const loadSummary = async () => {
     try {
-      const data = await import('./api/api').then(mod => mod.getDailySummary(selectedDate));
+      const api = await import('./api/api');
+      const data = await api.default.getDailySummary(selectedDate);
       setSummary({
         calories: data.total_calories || 0,
         protein: data.total_protein || 0,
@@ -76,11 +79,12 @@ function App() {
 
   const handleFoodSubmit = async (food: Omit<FoodItem, 'id'>) => {
     try {
-      await import('./api/api').then(mod => mod.addFood({ 
+      const api = await import('./api/api');
+      await api.default.addFood({ 
         ...food, 
         date: selectedDate, 
         is_favorite: false 
-      }));
+      });
       loadFoods();
       loadSummary();
     } catch (error) {
@@ -91,7 +95,8 @@ function App() {
   const handleFoodUpdate = async (food: FoodItem) => {
     if (!food.id) return;
     try {
-      await import('./api/api').then(mod => mod.updateFood(food.id, food));
+      const api = await import('./api/api');
+      await api.default.updateFood(food.id, food));
       loadFoods();
       loadSummary();
     } catch (error) {
@@ -102,7 +107,8 @@ function App() {
   const handleFoodDelete = async (id: number) => {
     if (!confirm('Are you sure you want to delete this food?')) return;
     try {
-      await import('./api/api').then(mod => mod.deleteFood(id));
+      const api = await import('./api/api');
+      await api.default.deleteFood(id);
       loadFoods();
       loadSummary();
     } catch (error) {
@@ -112,7 +118,8 @@ function App() {
 
   const handleGoalsUpdate = async (newGoals: Omit<DailyGoals, 'date'>) => {
     try {
-      await import('./api/api').then(mod => mod.setGoals({ ...newGoals, date: selectedDate }));
+      const api = await import('./api/api');
+      await api.default.setGoals({ ...newGoals, date: selectedDate });
       loadGoals();
     } catch (error) {
       console.error('Failed to update goals:', error);
