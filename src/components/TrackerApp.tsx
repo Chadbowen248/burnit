@@ -38,11 +38,23 @@ const TrackerApp: React.FC = () => {
   const [userFavorites, setUserFavorites] = useState<Food[]>([]);
   const [goals, setGoals] = useState<Goals>(defaultGoals);
   const [currentDate] = useState<string>(() => {
-    // Use local date, not UTC date! toISOString() was giving wrong date due to timezone
-    const today = new Date();
-    const localDateString = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
-    console.log('Current date (LOCAL timezone YYYY-MM-DD):', localDateString);
-    console.log('For comparison - UTC would be:', new Date().toISOString().split('T')[0]);
+    // MAXIMUM DEBUG MODE - let's see what's happening
+    const now = new Date();
+    console.log('=== DATE DEBUG INFO ===');
+    console.log('Raw Date object:', now);
+    console.log('getFullYear():', now.getFullYear());
+    console.log('getMonth():', now.getMonth(), '(0-indexed)');
+    console.log('getMonth() + 1:', now.getMonth() + 1);  
+    console.log('getDate():', now.getDate());
+    console.log('getTimezoneOffset():', now.getTimezoneOffset(), 'minutes');
+    console.log('toLocaleDateString():', now.toLocaleDateString());
+    console.log('toISOString():', now.toISOString());
+    
+    const localDateString = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+    console.log('CALCULATED LOCAL DATE:', localDateString);
+    console.log('UTC DATE FOR COMPARISON:', now.toISOString().split('T')[0]);
+    console.log('========================');
+    
     return localDateString;
   });
   const [selectedDate, setSelectedDate] = useState<string>(currentDate);
@@ -59,10 +71,17 @@ const TrackerApp: React.FC = () => {
       setError(null);
       const apiDate = formatDateForAPI(date);
       
-      // Load foods for the date
-      console.log(`Loading foods for date: ${apiDate} (attempt ${retryCount + 1})`);
+      // Load foods for the date  
+      console.log(`=== LOADING FOODS DEBUG (attempt ${retryCount + 1}) ===`);
+      console.log('Original date:', date);
+      console.log('API date:', apiDate);
+      console.log('Making API call to:', `${process.env.NODE_ENV === 'production' ? '/api' : 'http://localhost:3001'}/foods?date=${apiDate}`);
+      
       const foods = await FoodAPI.getFoods(apiDate);
-      console.log('Loaded foods from API:', foods);
+      console.log('API Response:', foods);
+      console.log('Response length:', foods?.length);
+      console.log('Response type:', typeof foods, Array.isArray(foods));
+      console.log('===============================');
       
       // Validate we got an array (sometimes API returns weird responses)
       if (!Array.isArray(foods)) {
@@ -169,9 +188,16 @@ const TrackerApp: React.FC = () => {
       };
 
       // Always save to API - no localStorage fallback
-      console.log('Saving food to API:', foodWithDate);
+      console.log('=== SAVING FOOD DEBUG ===');
+      console.log('Original food:', food);
+      console.log('Selected date:', selectedDate);
+      console.log('Formatted date:', formatDateForAPI(selectedDate));
+      console.log('Food with date:', foodWithDate);
+      console.log('API URL:', `${process.env.NODE_ENV === 'production' ? '/api' : 'http://localhost:3001'}/foods`);
+      
       const savedFood = await FoodAPI.addFood(foodWithDate);
-      console.log('Food saved successfully:', savedFood);
+      console.log('Save response:', savedFood);
+      console.log('=======================');
       
       // Update local state immediately
       setTrackerData(prev => {
