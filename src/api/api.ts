@@ -8,7 +8,7 @@ const API_URL = process.env.NODE_ENV === 'production'
 class FoodAPI {
   private client = axios.create({
     baseURL: API_URL,
-    timeout: 10000,
+    timeout: 15000, // Increased timeout for serverless cold starts
   });
 
   async getFoods(date?: string): Promise<Food[]> {

@@ -49,16 +49,23 @@ const TrackerApp: React.FC = () => {
   const [initialLoading, setInitialLoading] = useState(true); // New: Track initial data load
   const [error, setError] = useState<string | null>(null);
 
-  // Load data for a specific date
-  const loadDateData = useCallback(async (date: string) => {
+  // Load data for a specific date with retry logic
+  const loadDateData = useCallback(async (date: string, retryCount = 0) => {
+    const maxRetries = 3;
+    
     try {
       setError(null);
       const apiDate = formatDateForAPI(date);
       
       // Load foods for the date
-      console.log('Loading foods for date:', apiDate);
+      console.log(`Loading foods for date: ${apiDate} (attempt ${retryCount + 1})`);
       const foods = await FoodAPI.getFoods(apiDate);
       console.log('Loaded foods from API:', foods);
+      
+      // Validate we got an array (sometimes API returns weird responses)
+      if (!Array.isArray(foods)) {
+        throw new Error(`API returned invalid data type: ${typeof foods}`);
+      }
       
       // Calculate totals
       const totals = foods.reduce(
@@ -77,8 +84,19 @@ const TrackerApp: React.FC = () => {
       }));
 
     } catch (err: any) {
-      console.error('Failed to load data for date:', date, err);
-      setError(`Failed to load data: ${err.message}. Please check your internet connection.`);
+      console.error(`Failed to load data for date: ${date} (attempt ${retryCount + 1}):`, err);
+      
+      // Retry up to maxRetries times
+      if (retryCount < maxRetries) {
+        console.log(`Retrying in 2 seconds... (${retryCount + 1}/${maxRetries})`);
+        setTimeout(() => {
+          loadDateData(date, retryCount + 1);
+        }, 2000);
+        return;
+      }
+      
+      // Max retries exceeded
+      setError(`Failed to load data after ${maxRetries + 1} attempts: ${err.message}. Please refresh the page.`);
       
       // Set empty data instead of crashing
       setTrackerData(prev => ({
