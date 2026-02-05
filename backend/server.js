@@ -18,7 +18,7 @@ const db = new sqlite3.Database(dbPath, (err) => {
   
   // Initialize schema
   const fs = require('fs');
-  const schema = fs.readFileSync(path.join(__dirname, '..', 'schema.sql'), 'utf8');
+  const schema = fs.readFileSync(path.join(__dirname, 'schema.sql'), 'utf8');
   db.exec(schema, (err) => {
     if (err) {
       console.error('Error initializing schema:', err);
@@ -231,7 +231,7 @@ app.post('/api/goals', (req, res) => {
     if (err) {
       res.status(500).json({ error: err.message });
     } else {
-      res.status(201).json({ date, ..., message: 'Goals updated successfully' });
+      res.status(201).json({ date, calories, protein, carbs, fat, message: 'Goals updated successfully' });
     }
   });
 });

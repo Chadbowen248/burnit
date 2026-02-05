@@ -109,7 +109,7 @@ const FoodAdder: React.FC<FoodAdderProps> = ({
                   </span>
                   <button
                     className="remove-btn"
-                    onClick={() => onRemoveFavorite(food.id)}
+                    onClick={() => food.id && onRemoveFavorite(food.id)}
                     title="Remove"
                   >
                     ×

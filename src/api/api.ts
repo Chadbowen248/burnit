@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { Food, Goals, DailySummary } from '../components/types';
 
 const API_URL = process.env.NODE_ENV === 'production' 
   ? '/api' 
@@ -10,63 +11,44 @@ class FoodAPI {
     timeout: 10000,
   });
 
-  async getFoods(date?: string) {
+  async getFoods(date?: string): Promise<Food[]> {
     const { data } = await this.client.get('/foods', { params: { date } });
     return data;
   }
 
-  async addFood(food: Omit<FoodType, 'id'>) {
+  async addFood(food: Omit<Food, 'id' | 'instanceId'>): Promise<Food> {
     const { data } = await this.client.post('/foods', food);
     return data;
   }
 
-  async updateFood(id: number, food: Partial<FoodType>) {
+  async updateFood(id: number, food: Partial<Food>): Promise<Food> {
     const { data } = await this.client.put(`/foods/${id}`, food);
     return data;
   }
 
-  async deleteFood(id: number) {
+  async deleteFood(id: number): Promise<void> {
     await this.client.delete(`/foods/${id}`);
   }
 
-  async getDailySummary(date: string) {
+  async getDailySummary(date: string): Promise<DailySummary> {
     const { data } = await this.client.get(`/summary/${date}`);
     return data;
   }
 
-  async getGoals(date: string) {
+  async getGoals(date: string): Promise<Goals> {
     const { data } = await this.client.get(`/goals/${date}`);
     return data;
   }
 
-  async setGoals(goals: DailyGoals) {
+  async setGoals(goals: Goals): Promise<Goals> {
     const { data } = await this.client.post('/goals', goals);
     return data;
   }
-}
 
-export interface FoodType {
-  id: number;
-  name: string;
-  calories: number;
-  protein: number;
-  carbs: number;
-  fat: number;
-  quantity: number;
-  unit: string;
-  date: string;
-  meal_type: 'breakfast' | 'lunch' | 'dinner' | 'snack';
-  is_favorite: boolean;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface DailyGoals {
-  calories: number;
-  protein?: number;
-  carbs?: number;
-  fat?: number;
-  date: string;
+  async getFavorites(): Promise<Food[]> {
+    const { data } = await this.client.get('/foods', { params: { is_favorite: true } });
+    return data;
+  }
 }
 
 export default new FoodAPI();
