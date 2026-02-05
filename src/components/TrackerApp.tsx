@@ -16,10 +16,10 @@ const formatDateForAPI = (date: string): string => {
     return date;
   }
   
-  // Convert from other date string formats to YYYY-MM-DD format
+  // Convert from other date string formats to YYYY-MM-DD format using LOCAL timezone
   const d = new Date(date);
-  const formatted = d.toISOString().split('T')[0];
-  console.log(`formatDateForAPI: "${date}" -> "${formatted}"`);
+  const formatted = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  console.log(`formatDateForAPI: "${date}" -> "${formatted}" (LOCAL timezone, not UTC)`);
   return formatted;
 };
 
@@ -38,10 +38,12 @@ const TrackerApp: React.FC = () => {
   const [userFavorites, setUserFavorites] = useState<Food[]>([]);
   const [goals, setGoals] = useState<Goals>(defaultGoals);
   const [currentDate] = useState<string>(() => {
-    // Use consistent YYYY-MM-DD format everywhere instead of locale-dependent toLocaleDateString()
-    const today = new Date().toISOString().split('T')[0];
-    console.log('Current date (fixed YYYY-MM-DD format):', today);
-    return today;
+    // Use local date, not UTC date! toISOString() was giving wrong date due to timezone
+    const today = new Date();
+    const localDateString = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+    console.log('Current date (LOCAL timezone YYYY-MM-DD):', localDateString);
+    console.log('For comparison - UTC would be:', new Date().toISOString().split('T')[0]);
+    return localDateString;
   });
   const [selectedDate, setSelectedDate] = useState<string>(currentDate);
   const [showGoalsSettings, setShowGoalsSettings] = useState(false);
