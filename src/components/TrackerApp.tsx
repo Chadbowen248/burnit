@@ -16,6 +16,16 @@ const formatDateForAPI = (date: string): string => {
 };
 
 const TrackerApp: React.FC = () => {
+  // Clear any old localStorage data on app start
+  useEffect(() => {
+    // Remove old localStorage keys that might interfere
+    localStorage.removeItem('trackerData');
+    localStorage.removeItem('userFavorites'); 
+    localStorage.removeItem('userGoals');
+    localStorage.removeItem('useAPI');
+    console.log('Cleared old localStorage data for clean API-only operation');
+  }, []);
+
   const [trackerData, setTrackerData] = useState<TrackerData>({});
   const [userFavorites, setUserFavorites] = useState<Food[]>([]);
   const [goals, setGoals] = useState<Goals>(defaultGoals);
