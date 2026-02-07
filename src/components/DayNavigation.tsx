@@ -34,7 +34,7 @@ const DayNavigation: React.FC<DayNavigationProps> = ({
   return (
     <div className="day-navigation">
       <h2 className="date-display">
-        {new Date(selectedDate).toLocaleDateString("en-US", {
+        {new Date(selectedDate + 'T00:00:00').toLocaleDateString("en-US", {
           weekday: "long",
           month: "long",
           day: "numeric",
