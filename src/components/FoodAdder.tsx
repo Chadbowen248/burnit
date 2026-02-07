@@ -42,15 +42,14 @@ const FoodAdder: React.FC<FoodAdderProps> = ({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (name && calories > 0 && protein >= 0) {
-      const newFood: Food = {
-        id: Date.now(),
+      const newFood: Omit<Food, 'id'> = {
         name,
         calories,
         protein,
       };
-      addFood(newFood);
+      addFood(newFood as Food);
       if (saveToFavorites) {
-        onSaveToFavorites(newFood);
+        onSaveToFavorites(newFood as Food);
       }
       closeModal();
     }
